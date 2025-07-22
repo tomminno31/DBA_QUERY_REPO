@@ -52,8 +52,8 @@ def get_argomenti_conteggio(tipo):
     c.execute("SELECT argomento, COUNT(*) FROM queries WHERE tipo=? GROUP BY argomento ORDER BY COUNT(*) DESC", (tipo,))
     return c.fetchall()
 
-def get_query_by_argomento(argomento):
-    c.execute("SELECT * FROM queries WHERE argomento=?", (argomento,))
+def get_query_by_argomento(argomento, tipo):
+    c.execute("SELECT * FROM queries WHERE argomento=? AND tipo=?", (argomento, tipo))
     return c.fetchall()
 
 # UI Streamlit
@@ -61,7 +61,6 @@ st.set_page_config(page_title="DBA Query Repository")
 st.title("📚 DBA Query Repository")
 
 st.sidebar.title("Navigazione")
-
 if st.sidebar.button("🏠 Home"):
     st.session_state['pagina_attiva'] = "🏠 Home"
 if st.sidebar.button("➕ Aggiungi Query"):
@@ -71,9 +70,8 @@ if st.sidebar.button("📜 Aggiungi Procedura"):
 if st.sidebar.button("🔍 Cerca"):
     st.session_state['pagina_attiva'] = "🔍 Cerca"
 
-# Recupera la pagina selezionata
 pagina = st.session_state.get('pagina_attiva', "🏠 Home")
-
+st.session_state['pagina_attiva'] = pagina
 
 if pagina == "🏠 Home":
     st.markdown("""
@@ -139,7 +137,6 @@ elif pagina == "🔍 Cerca":
 
     termine = st.text_input("Termine di ricerca")
 
-    # Priorità alla selezione da homepage
     argomento_selezionato = st.session_state.get('argomento_selezionato', None)
     tipo_selezionato = st.session_state.get('tipo_selezionato', None)
 
@@ -147,27 +144,13 @@ elif pagina == "🔍 Cerca":
     if termine:
         risultati = cerca_query(termine)
     elif argomento_selezionato and tipo_selezionato:
-        c.execute("SELECT * FROM queries WHERE argomento=? AND tipo=?", (argomento_selezionato, tipo_selezionato))
-        risultati = c.fetchall()
+        risultati = get_query_by_argomento(argomento_selezionato, tipo_selezionato)
         st.subheader(f"Visualizzazione per argomento: {argomento_selezionato} ({tipo_selezionato})")
         st.session_state.pop('argomento_selezionato')
         st.session_state.pop('tipo_selezionato')
 
     if risultati:
         for r in risultati:
-            st.markdown(f"""
-            ---
-            **Argomento:** {r[2]}
-            
-            **Parole chiave:** {r[3]}
-            
-            **Note:** {r[4]}
-            
-            **OPIT:** {r[5]}  |  **Autore:** {r[7]}  |  **Data:** {r[6]}  |  **Tipo:** {r[8]}
-
-            ```sql
-            {r[1]}
-            ```
-            """)
+            st.code(r[1], language='sql')
     elif termine:
         st.info("Nessun risultato trovato.")
