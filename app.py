@@ -61,7 +61,9 @@ st.set_page_config(page_title="DBA Query Repository")
 st.title("📚 DBA Query Repository")
 
 st.sidebar.title("Navigazione")
-pagina = st.sidebar.radio("Vai a:", ["🏠 Home", "➕ Aggiungi Query", "📜 Aggiungi Procedura", "🔍 Cerca"], label_visibility="collapsed")
+pagina = st.session_state.get('pagina_attiva', "🏠 Home")
+st.session_state['pagina_attiva'] = pagina  # Aggiorna lo stato ogni volta
+
 
 if pagina == "🏠 Home":
     st.markdown("""
@@ -79,8 +81,8 @@ if pagina == "🏠 Home":
             if st.button(f"📄 {arg} ({count} query)"):
                 st.session_state['argomento_selezionato'] = arg
                 st.session_state['tipo_selezionato'] = 'query'
-                pagina = "🔍 Cerca"
-                st.experimental_rerun()
+                st.session_state['pagina_attiva'] = \"🔍 Cerca\"
+
     else:
         st.info("Nessuna query ancora inserita.")
 
