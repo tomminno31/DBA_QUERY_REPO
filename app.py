@@ -61,8 +61,19 @@ st.set_page_config(page_title="DBA Query Repository")
 st.title("📚 DBA Query Repository")
 
 st.sidebar.title("Navigazione")
+
+if st.sidebar.button("🏠 Home"):
+    st.session_state['pagina_attiva'] = "🏠 Home"
+if st.sidebar.button("➕ Aggiungi Query"):
+    st.session_state['pagina_attiva'] = "➕ Aggiungi Query"
+if st.sidebar.button("📜 Aggiungi Procedura"):
+    st.session_state['pagina_attiva'] = "📜 Aggiungi Procedura"
+if st.sidebar.button("🔍 Cerca"):
+    st.session_state['pagina_attiva'] = "🔍 Cerca"
+
+# Recupera la pagina selezionata
 pagina = st.session_state.get('pagina_attiva', "🏠 Home")
-st.session_state['pagina_attiva'] = pagina  # Aggiorna lo stato ogni volta
+
 
 if pagina == "🏠 Home":
     st.markdown("""
