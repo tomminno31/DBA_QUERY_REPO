@@ -64,59 +64,49 @@ def get_query_by_argomento(argomento, tipo):
 
 # UI Streamlit
 st.set_page_config(page_title="DBA Query Repository")
-st.title("📚 DBA Query Repository")
+st.title("\U0001F4DA DBA Query Repository")
 
 st.sidebar.title("Navigazione")
-if st.sidebar.button("🏠 Home"):
-    st.session_state['pagina_attiva'] = "🏠 Home"
+if st.sidebar.button("\U0001F3E0 Home"):
+    st.session_state['pagina_attiva'] = "\U0001F3E0 Home"
 if st.sidebar.button("➕ Aggiungi Query"):
     st.session_state['pagina_attiva'] = "➕ Aggiungi Query"
-if st.sidebar.button("📜 Aggiungi Procedura"):
-    st.session_state['pagina_attiva'] = "📜 Aggiungi Procedura"
-if st.sidebar.button("🔍 Cerca"):
-    st.session_state['pagina_attiva'] = "🔍 Cerca"
+if st.sidebar.button("\U0001F4DC Aggiungi Procedura"):
+    st.session_state['pagina_attiva'] = "\U0001F4DC Aggiungi Procedura"
+if st.sidebar.button("\U0001F50D Cerca"):
+    st.session_state['pagina_attiva'] = "\U0001F50D Cerca"
 
-pagina = st.session_state.get('pagina_attiva', "🏠 Home")
+pagina = st.session_state.get('pagina_attiva', "\U0001F3E0 Home")
 st.session_state['pagina_attiva'] = pagina
 
-if pagina == "🏠 Home":
+if pagina == "\U0001F3E0 Home":
     st.markdown("""
-    ## 📚 Benvenuto nel repository query DBA
+    ## \U0001F4DA Benvenuto nel repository query DBA
     - Conserva le query SQL utili
     - Organizzale per argomento e parole chiave
     - Aggiungi note e riferimento OPIT
     - Ricerca libera su tutto
     """)
 
-    st.markdown("### 🔎 Indice Query")
+    st.markdown("### \U0001F50D Indice Query")
     argomenti_query = get_argomenti_conteggio("query")
     if argomenti_query:
         for arg, count in argomenti_query:
-            with st.expander(f"📄 {arg} ({count} query)"):
-                st.write("Premi il bottone per visualizzare le query di questo argomento.")
-                if st.button(f"🔍 Visualizza '{arg}'", key=f"vai_{arg}"):
-                    st.session_state['argomento_selezionato'] = arg
-                    st.session_state['tipo_selezionato'] = 'query'
-                    st.session_state['pagina_attiva'] = "🔍 Cerca"
-
+            if st.button(f"\U0001F4C4 {arg} ({count} query)", key=f"q_{arg}"):
+                st.session_state['argomento_selezionato'] = arg
+                st.session_state['tipo_selezionato'] = 'query'
+                st.session_state['pagina_attiva'] = "\U0001F4C4 Visualizza"
     else:
         st.info("Nessuna query ancora inserita.")
 
-    st.markdown("### 📜 Indice Procedure")
+    st.markdown("### \U0001F4DC Indice Procedure")
     argomenti_proc = get_argomenti_conteggio("procedura")
     if argomenti_proc:
         for arg, count in argomenti_proc:
-            with st.expander(f"📄 {arg} ({count} query)"):
-                st.write("Premi il bottone per visualizzare le query di questo argomento.")
-                if st.button(f"🔍 Visualizza '{arg}'", key=f"vai_{arg}"):
-                    st.session_state['argomento_selezionato'] = arg
-                    st.session_state['tipo_selezionato'] = 'procedura'
-                    st.session_state['pagina_attiva'] = "🔍 Cerca"
-
-            # if st.button(f"🧾 {arg} ({count} procedure)"):
-                # st.session_state['argomento_selezionato'] = arg
-                # st.session_state['tipo_selezionato'] = 'procedura'
-                # st.session_state['pagina_attiva'] = "🔍 Cerca"
+            if st.button(f"\U0001F4BE {arg} ({count} procedure)", key=f"p_{arg}"):
+                st.session_state['argomento_selezionato'] = arg
+                st.session_state['tipo_selezionato'] = 'procedura'
+                st.session_state['pagina_attiva'] = "\U0001F4C4 Visualizza"
     else:
         st.info("Nessuna procedura ancora inserita.")
 
@@ -134,7 +124,7 @@ elif pagina == "➕ Aggiungi Query":
             aggiungi_query(query, argomento, parole_chiave.split(","), note, opit, autore, "query")
             st.success("✅ Query salvata correttamente")
 
-elif pagina == "📜 Aggiungi Procedura":
+elif pagina == "\U0001F4DC Aggiungi Procedura":
     st.header("Aggiungi una nuova procedura")
     with st.form("aggiungi_proc_form"):
         query = st.text_area("Procedura SQL", height=200)
@@ -148,22 +138,34 @@ elif pagina == "📜 Aggiungi Procedura":
             aggiungi_query(query, argomento, parole_chiave.split(","), note, opit, autore, "procedura")
             st.success("✅ Procedura salvata correttamente")
 
-elif pagina == "🔍 Cerca":
+elif pagina == "\U0001F4C4 Visualizza":
+    argomento_selezionato = st.session_state.get('argomento_selezionato')
+    tipo_selezionato = st.session_state.get('tipo_selezionato')
+
+    if argomento_selezionato and tipo_selezionato:
+        risultati = get_query_by_argomento(argomento_selezionato, tipo_selezionato)
+        st.subheader(f"Visualizzazione per argomento: {argomento_selezionato} ({tipo_selezionato})")
+
+        for r in risultati:
+            nuovo_testo = st.text_area("Query SQL", value=r[1], key=f"query_{r[0]}")
+            nuovo_argomento = st.text_input("Argomento", value=r[2], key=f"arg_{r[0]}")
+            nuove_parole_chiave = st.text_input("Parole chiave", value=r[3], key=f"kw_{r[0]}")
+            nuove_note = st.text_area("Note", value=r[4], key=f"note_{r[0]}")
+            nuovo_opit = st.text_input("OPIT", value=r[5], key=f"opit_{r[0]}")
+            if st.button("💾 Salva modifiche", key=f"save_{r[0]}"):
+                modifica_query(r[0], nuovo_testo, nuovo_argomento, nuove_parole_chiave.split(","), nuove_note, nuovo_opit)
+                st.success("Modifica salvata. Ricarica la pagina per vedere i cambiamenti.")
+
+        if st.button("⬅️ Torna alla Home"):
+            st.session_state['pagina_attiva'] = "🏠 Home"
+            st.experimental_rerun()
+
+elif pagina == "\U0001F50D Cerca":
     st.header("Cerca tra le query e le procedure")
 
     termine = st.text_input("Termine di ricerca")
 
-    argomento_selezionato = st.session_state.get('argomento_selezionato', None)
-    tipo_selezionato = st.session_state.get('tipo_selezionato', None)
-
-    risultati = []
-    if termine:
-        risultati = cerca_query(termine)
-    elif argomento_selezionato and tipo_selezionato:
-        risultati = get_query_by_argomento(argomento_selezionato, tipo_selezionato)
-        st.subheader(f"Visualizzazione per argomento: {argomento_selezionato} ({tipo_selezionato})")
-        st.session_state.pop('argomento_selezionato')
-        st.session_state.pop('tipo_selezionato')
+    risultati = cerca_query(termine) if termine else []
 
     if risultati:
         for r in risultati:
