@@ -92,10 +92,13 @@ if pagina == "🏠 Home":
     argomenti_query = get_argomenti_conteggio("query")
     if argomenti_query:
         for arg, count in argomenti_query:
-            if st.button(f"📄 {arg} ({count} query)"):
-                st.session_state['argomento_selezionato'] = arg
-                st.session_state['tipo_selezionato'] = 'query'
-                st.session_state['pagina_attiva'] = "🔍 Cerca"
+            with st.expander(f"📄 {arg} ({count} query)"):
+                st.write("Premi il bottone per visualizzare le query di questo argomento.")
+                if st.button(f"🔍 Visualizza '{arg}'", key=f"vai_{arg}"):
+                    st.session_state['argomento_selezionato'] = arg
+                    st.session_state['tipo_selezionato'] = 'query'
+                    st.session_state['pagina_attiva'] = "🔍 Cerca"
+
     else:
         st.info("Nessuna query ancora inserita.")
 
@@ -103,10 +106,17 @@ if pagina == "🏠 Home":
     argomenti_proc = get_argomenti_conteggio("procedura")
     if argomenti_proc:
         for arg, count in argomenti_proc:
-            if st.button(f"🧾 {arg} ({count} procedure)"):
-                st.session_state['argomento_selezionato'] = arg
-                st.session_state['tipo_selezionato'] = 'procedura'
-                st.session_state['pagina_attiva'] = "🔍 Cerca"
+            with st.expander(f"📄 {arg} ({count} query)"):
+                st.write("Premi il bottone per visualizzare le query di questo argomento.")
+                if st.button(f"🔍 Visualizza '{arg}'", key=f"vai_{arg}"):
+                    st.session_state['argomento_selezionato'] = arg
+                    st.session_state['tipo_selezionato'] = 'procedura'
+                    st.session_state['pagina_attiva'] = "🔍 Cerca"
+
+            # if st.button(f"🧾 {arg} ({count} procedure)"):
+                # st.session_state['argomento_selezionato'] = arg
+                # st.session_state['tipo_selezionato'] = 'procedura'
+                # st.session_state['pagina_attiva'] = "🔍 Cerca"
     else:
         st.info("Nessuna procedura ancora inserita.")
 
