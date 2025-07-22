@@ -39,6 +39,12 @@ def aggiungi_query(query, argomento, parole_chiave, note, opit, autore, tipo):
     ))
     conn.commit()
 
+def modifica_query(id, query, argomento, parole_chiave, note, opit):
+    c.execute('''
+        UPDATE queries SET query=?, argomento=?, parole_chiave=?, note=?, opit=? WHERE id=?
+    ''', (query, argomento, ",".join(parole_chiave), note, opit, id))
+    conn.commit()
+
 def cerca_query(termine):
     query = f"""
         SELECT * FROM queries
@@ -151,6 +157,14 @@ elif pagina == "🔍 Cerca":
 
     if risultati:
         for r in risultati:
-            st.code(r[1], language='sql')
+            with st.expander(f"📝 Modifica {r[2]} - {r[7]}"):
+                nuovo_testo = st.text_area("Query SQL", value=r[1], key=f"query_{r[0]}")
+                nuovo_argomento = st.text_input("Argomento", value=r[2], key=f"arg_{r[0]}")
+                nuove_parole_chiave = st.text_input("Parole chiave", value=r[3], key=f"kw_{r[0]}")
+                nuove_note = st.text_area("Note", value=r[4], key=f"note_{r[0]}")
+                nuovo_opit = st.text_input("OPIT", value=r[5], key=f"opit_{r[0]}")
+                if st.button("💾 Salva modifiche", key=f"save_{r[0]}"):
+                    modifica_query(r[0], nuovo_testo, nuovo_argomento, nuove_parole_chiave.split(","), nuove_note, nuovo_opit)
+                    st.success("Modifica salvata. Ricarica la pagina per vedere i cambiamenti.")
     elif termine:
         st.info("Nessun risultato trovato.")
