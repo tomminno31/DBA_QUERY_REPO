@@ -15,16 +15,17 @@ c.execute('''
         note TEXT,
         opit TEXT,
         data_creazione TEXT,
-        autore TEXT
+        autore TEXT,
+        tipo TEXT DEFAULT 'query'
     )
 ''')
 conn.commit()
 
 # Funzioni utili
-def aggiungi_query(query, argomento, parole_chiave, note, opit, autore):
+def aggiungi_query(query, argomento, parole_chiave, note, opit, autore, tipo):
     c.execute('''
-        INSERT INTO queries (id, query, argomento, parole_chiave, note, opit, data_creazione, autore)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO queries (id, query, argomento, parole_chiave, note, opit, data_creazione, autore, tipo)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         str(uuid.uuid4()),
         query,
@@ -33,7 +34,8 @@ def aggiungi_query(query, argomento, parole_chiave, note, opit, autore):
         note,
         opit,
         datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        autore
+        autore,
+        tipo
     ))
     conn.commit()
 
@@ -46,8 +48,12 @@ def cerca_query(termine):
     c.execute(query, (wildcard,) * 6)
     return c.fetchall()
 
-def get_argomenti_conteggio():
-    c.execute("SELECT argomento, COUNT(*) FROM queries GROUP BY argomento ORDER BY COUNT(*) DESC")
+def get_argomenti_conteggio(tipo):
+    c.execute("SELECT argomento, COUNT(*) FROM queries WHERE tipo=? GROUP BY argomento ORDER BY COUNT(*) DESC", (tipo,))
+    return c.fetchall()
+
+def get_query_by_argomento(argomento):
+    c.execute("SELECT * FROM queries WHERE argomento=?", (argomento,))
     return c.fetchall()
 
 # UI Streamlit
@@ -55,24 +61,40 @@ st.set_page_config(page_title="DBA Query Repository")
 st.title("📚 DBA Query Repository")
 
 st.sidebar.title("Navigazione")
-pagina = st.sidebar.radio("Vai a:", ["🏠 Home", "➕ Aggiungi Query", "🔍 Cerca"], label_visibility="collapsed")
+pagina = st.sidebar.radio("Vai a:", ["🏠 Home", "➕ Aggiungi Query", "📜 Aggiungi Procedura", "🔍 Cerca"], label_visibility="collapsed")
 
 if pagina == "🏠 Home":
     st.markdown("""
-    ## 📚 Benvenuto nel repository query DBA Spindox
+    ## 📚 Benvenuto nel repository query DBA
     - Conserva le query SQL utili
     - Organizzale per argomento e parole chiave
     - Aggiungi note e riferimento OPIT
     - Ricerca libera su tutto
     """)
 
-    st.markdown("### 📌 Indice automatico per argomento")
-    argomenti = get_argomenti_conteggio()
-    if argomenti:
-        for arg, count in argomenti:
-            st.markdown(f"- **{arg}** ({count} query)")
+    st.markdown("### 🔎 Indice Query")
+    argomenti_query = get_argomenti_conteggio("query")
+    if argomenti_query:
+        for arg, count in argomenti_query:
+            if st.button(f"📄 {arg} ({count} query)"):
+                st.session_state['argomento_selezionato'] = arg
+                st.session_state['tipo_selezionato'] = 'query'
+                pagina = "🔍 Cerca"
+                st.experimental_rerun()
     else:
         st.info("Nessuna query ancora inserita.")
+
+    st.markdown("### 📜 Indice Procedure")
+    argomenti_proc = get_argomenti_conteggio("procedura")
+    if argomenti_proc:
+        for arg, count in argomenti_proc:
+            if st.button(f"🧾 {arg} ({count} procedure)"):
+                st.session_state['argomento_selezionato'] = arg
+                st.session_state['tipo_selezionato'] = 'procedura'
+                pagina = "🔍 Cerca"
+                st.experimental_rerun()
+    else:
+        st.info("Nessuna procedura ancora inserita.")
 
 elif pagina == "➕ Aggiungi Query":
     st.header("Aggiungi una nuova query")
@@ -85,29 +107,57 @@ elif pagina == "➕ Aggiungi Query":
         autore = st.text_input("Tuo nome")
         submitted = st.form_submit_button("Salva")
         if submitted and query:
-            aggiungi_query(query, argomento, parole_chiave.split(","), note, opit, autore)
+            aggiungi_query(query, argomento, parole_chiave.split(","), note, opit, autore, "query")
             st.success("✅ Query salvata correttamente")
 
+elif pagina == "📜 Aggiungi Procedura":
+    st.header("Aggiungi una nuova procedura")
+    with st.form("aggiungi_proc_form"):
+        query = st.text_area("Procedura SQL", height=200)
+        argomento = st.text_input("Argomento procedura")
+        parole_chiave = st.text_input("Parole chiave (separate da virgole)")
+        note = st.text_area("Descrizione procedura")
+        opit = st.text_input("OPIT o riferimento")
+        autore = st.text_input("Tuo nome")
+        submitted = st.form_submit_button("Salva procedura")
+        if submitted and query:
+            aggiungi_query(query, argomento, parole_chiave.split(","), note, opit, autore, "procedura")
+            st.success("✅ Procedura salvata correttamente")
+
 elif pagina == "🔍 Cerca":
-    st.header("Cerca tra le query")
+    st.header("Cerca tra le query e le procedure")
+
     termine = st.text_input("Termine di ricerca")
+
+    # Priorità alla selezione da homepage
+    argomento_selezionato = st.session_state.get('argomento_selezionato', None)
+    tipo_selezionato = st.session_state.get('tipo_selezionato', None)
+
+    risultati = []
     if termine:
         risultati = cerca_query(termine)
-        if risultati:
-            for r in risultati:
-                st.markdown(f"""
-                ---
-                **Argomento:** {r[2]}
-                
-                **Parole chiave:** {r[3]}
-                
-                **Note:** {r[4]}
-                
-                **OPIT:** {r[5]}  |  **Autore:** {r[7]}  |  **Data:** {r[6]}
+    elif argomento_selezionato and tipo_selezionato:
+        c.execute("SELECT * FROM queries WHERE argomento=? AND tipo=?", (argomento_selezionato, tipo_selezionato))
+        risultati = c.fetchall()
+        st.subheader(f"Visualizzazione per argomento: {argomento_selezionato} ({tipo_selezionato})")
+        st.session_state.pop('argomento_selezionato')
+        st.session_state.pop('tipo_selezionato')
 
-                ```sql
-                {r[1]}
-                ```
-                """)
-        else:
-            st.info("Nessun risultato trovato.")
+    if risultati:
+        for r in risultati:
+            st.markdown(f"""
+            ---
+            **Argomento:** {r[2]}
+            
+            **Parole chiave:** {r[3]}
+            
+            **Note:** {r[4]}
+            
+            **OPIT:** {r[5]}  |  **Autore:** {r[7]}  |  **Data:** {r[6]}  |  **Tipo:** {r[8]}
+
+            ```sql
+            {r[1]}
+            ```
+            """)
+    elif termine:
+        st.info("Nessun risultato trovato.")
