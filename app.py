@@ -64,7 +64,6 @@ st.sidebar.title("Navigazione")
 pagina = st.session_state.get('pagina_attiva', "🏠 Home")
 st.session_state['pagina_attiva'] = pagina  # Aggiorna lo stato ogni volta
 
-
 if pagina == "🏠 Home":
     st.markdown("""
     ## 📚 Benvenuto nel repository query DBA
@@ -81,8 +80,7 @@ if pagina == "🏠 Home":
             if st.button(f"📄 {arg} ({count} query)"):
                 st.session_state['argomento_selezionato'] = arg
                 st.session_state['tipo_selezionato'] = 'query'
-                st.session_state['pagina_attiva'] = \"🔍 Cerca\"
-
+                st.session_state['pagina_attiva'] = "🔍 Cerca"
     else:
         st.info("Nessuna query ancora inserita.")
 
@@ -93,8 +91,7 @@ if pagina == "🏠 Home":
             if st.button(f"🧾 {arg} ({count} procedure)"):
                 st.session_state['argomento_selezionato'] = arg
                 st.session_state['tipo_selezionato'] = 'procedura'
-                pagina = "🔍 Cerca"
-                st.experimental_rerun()
+                st.session_state['pagina_attiva'] = "🔍 Cerca"
     else:
         st.info("Nessuna procedura ancora inserita.")
 
